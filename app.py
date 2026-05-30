@@ -22,39 +22,85 @@ st.set_page_config(page_title="India Stock Wealth Tracker",
 
 
 # --------------------------------------------------------------------------- #
-# Password gate
+# Password gate (two roles: owner sees everything, viewer sees analysis only)
 # --------------------------------------------------------------------------- #
-# Protects the dashboard when hosted online. The password is read from
-# Streamlit secrets (set in the Streamlit Cloud app settings, NOT in code).
-# If no password is configured (e.g. running locally), the gate is skipped.
+# Passwords are read from Streamlit secrets (set in Streamlit Cloud settings):
+#   app_password         -> OWNER: full access incl. holdings-based tabs
+#   viewer_password      -> VIEWER: analysis tabs only, holdings hidden
+# If no password is configured (e.g. running locally), access is full ("owner").
 def _check_password():
-    expected = None
+    owner_pw = viewer_pw = None
     try:
-        expected = st.secrets.get("app_password")
+        owner_pw = st.secrets.get("app_password")
+        viewer_pw = st.secrets.get("viewer_password")
     except Exception:
-        expected = None
+        owner_pw = viewer_pw = None
 
-    # No password configured -> open access (typical for local use)
-    if not expected:
-        return True
+    # No owner password configured -> local use, full access
+    if not owner_pw:
+        st.session_state["role"] = "owner"
+        return
 
-    if st.session_state.get("auth_ok"):
-        return True
+    if st.session_state.get("role"):
+        return
 
     st.title("🔒 Stock Wealth Tracker")
     st.write("This dashboard is password-protected.")
     pwd = st.text_input("Enter password", type="password")
     if pwd:
-        if pwd == expected:
-            st.session_state["auth_ok"] = True
+        if pwd == owner_pw:
+            st.session_state["role"] = "owner"
+            st.rerun()
+        elif viewer_pw and pwd == viewer_pw:
+            st.session_state["role"] = "viewer"
             st.rerun()
         else:
             st.error("Incorrect password.")
     st.stop()
-    return False
 
 
 _check_password()
+IS_OWNER = st.session_state.get("role") == "owner"
+
+
+
+def load_holdings():
+    """Load holdings as {ticker: invested_value}.
+
+    Priority:
+      1. Streamlit secrets key 'holdings_csv' (used when hosted online, so the
+         data never has to live in a public repo), OR
+      2. a local holdings.csv file (used when running on your own PC).
+    Both use the format:  ticker,invested_value  (one per line, header row ok).
+    """
+    import csv as _csv
+    import io as _io
+
+    text = None
+    # 1. Try Streamlit secrets (online, private)
+    try:
+        text = st.secrets.get("holdings_csv")
+    except Exception:
+        text = None
+
+    # 2. Fall back to local file
+    if not text:
+        try:
+            with open("holdings.csv", newline="") as f:
+                text = f.read()
+        except FileNotFoundError:
+            return {}
+
+    holdings = {}
+    for row in _csv.DictReader(_io.StringIO(text)):
+        t = (row.get("ticker") or "").strip().upper()
+        v = row.get("invested_value")
+        if t and v:
+            try:
+                holdings[t] = float(v)
+            except ValueError:
+                pass
+    return holdings
 
 
 @st.cache_data(ttl=300)
@@ -92,10 +138,18 @@ st.caption(f"Latest data: **{latest_date}**  •  {len(df)} stocks  •  "
            f"Tier-weighted score on {len(live_params)} live priority "
            f"parameters (of {len(config.PRIORITY_PARAMS)} total)")
 
-tab1, tab2, tab6, tab3, tab5, tab8, tab9 = st.tabs(
-    ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
-     "🔍 Screener", "🔬 Deep Dive",
-     "🌱 Future Investment", "⚖️ Rebalance"])
+if IS_OWNER:
+    tab1, tab2, tab6, tab3, tab5, tab8, tab9 = st.tabs(
+        ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
+         "🔍 Screener", "🔬 Deep Dive",
+         "🌱 Future Investment", "⚖️ Rebalance"])
+else:
+    # Viewer role: analysis tabs only — holdings-based tabs are hidden.
+    tab1, tab2, tab6, tab3, tab5 = st.tabs(
+        ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
+         "🔍 Screener", "🔬 Deep Dive"])
+    tab8 = tab9 = None   # holdings tabs not shown for viewers
+
 
 # --------------------------------------------------------------------------- #
 # TAB 1 - Leaderboard
@@ -583,30 +637,20 @@ with tab5:
 # --------------------------------------------------------------------------- #
 # TAB 8 - Future Investment (top-up mode: direct new money to under-weighted)
 # --------------------------------------------------------------------------- #
-with tab8:
+if IS_OWNER:
+  with tab8:
     st.subheader("Future investment — top-up to target")
     st.caption("Given new money to invest, this directs it toward stocks that "
                "are BELOW their score-weighted target, moving you toward the "
                "target allocation without selling anything. Reads your current "
                "holdings from holdings.csv. Not financial advice.")
 
-    # Load current holdings
-    import csv as _csv
-    holdings = {}
-    try:
-        with open("holdings.csv", newline="") as f:
-            for row in _csv.DictReader(f):
-                t = (row.get("ticker") or "").strip().upper()
-                v = row.get("invested_value")
-                if t and v:
-                    try:
-                        holdings[t] = float(v)
-                    except ValueError:
-                        pass
-    except FileNotFoundError:
-        st.warning("No holdings.csv found. Create one with columns "
-                   "`ticker,invested_value` to use top-up mode.")
-        holdings = {}
+    # Load current holdings (from Streamlit secrets online, or local file)
+    holdings = load_holdings()
+    if not holdings:
+        st.warning("No holdings found. Add a holdings.csv locally (columns "
+                   "`ticker,invested_value`), or set the `holdings_csv` secret "
+                   "when hosting online.")
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -691,7 +735,8 @@ with tab8:
 # --------------------------------------------------------------------------- #
 # TAB 9 - Rebalance (target vs current diagnostic + optional trade list)
 # --------------------------------------------------------------------------- #
-with tab9:
+if IS_OWNER:
+  with tab9:
     st.subheader("Rebalance — target vs current")
     st.caption("Shows, for each holding, the score-weighted target position "
                "vs what you currently hold. View 1 is informational (no need "
@@ -699,20 +744,7 @@ with tab9:
                "rebalance. Not financial advice — selling crystallises losses "
                "and has tax/cost implications.")
 
-    import csv as _csv2
-    holdings9 = {}
-    try:
-        with open("holdings.csv", newline="") as f:
-            for row in _csv2.DictReader(f):
-                t = (row.get("ticker") or "").strip().upper()
-                v = row.get("invested_value")
-                if t and v:
-                    try:
-                        holdings9[t] = float(v)
-                    except ValueError:
-                        pass
-    except FileNotFoundError:
-        st.warning("No holdings.csv found.")
+    holdings9 = load_holdings()
 
     rb_threshold = st.slider("Min score % to include in target", 0, 100, 65,
                              key="rb_thresh")
