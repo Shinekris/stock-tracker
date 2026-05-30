@@ -139,15 +139,15 @@ st.caption(f"Latest data: **{latest_date}**  •  {len(df)} stocks  •  "
            f"parameters (of {len(config.PRIORITY_PARAMS)} total)")
 
 if IS_OWNER:
-    tab1, tab2, tab6, tab3, tab5, tab8, tab9 = st.tabs(
+    tab1, tab2, tab6, tab3, tab5, tab8, tab9, tab10 = st.tabs(
         ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
          "🔍 Screener", "🔬 Deep Dive",
-         "🌱 Future Investment", "⚖️ Rebalance"])
+         "🌱 Future Investment", "⚖️ Rebalance", "📋 Research Checklist"])
 else:
     # Viewer role: analysis tabs only — holdings-based tabs are hidden.
-    tab1, tab2, tab6, tab3, tab5 = st.tabs(
+    tab1, tab2, tab6, tab3, tab5, tab10 = st.tabs(
         ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
-         "🔍 Screener", "🔬 Deep Dive"])
+         "🔍 Screener", "🔬 Deep Dive", "📋 Research Checklist"])
     tab8 = tab9 = None   # holdings tabs not shown for viewers
 
 
@@ -860,6 +860,122 @@ if IS_OWNER:
 
         st.caption(f"Portfolio base: ₹{port_total:,.0f}  •  "
                    "In a full rebalance, total sells ≈ total buys.")
+
+# --------------------------------------------------------------------------- #
+# TAB 10 - Research Checklist (reference for the non-automated parameters)
+# --------------------------------------------------------------------------- #
+with tab10:
+    st.subheader("Research checklist — the factors the tracker can't auto-score")
+    st.caption("These parameters from the wealth-creation framework need manual "
+               "research (they're not reliably available from free data feeds). "
+               "Use this as a guide when you study a shortlisted stock: what to "
+               "look for, where to find it, and what 'good' looks like. "
+               "This is reference information only — nothing here is scored or "
+               "saved, and none of it is financial advice.")
+
+    checklist = [
+        ("📦 Order Momentum", "Most relevant for infra, defence, capital-goods, EPC stocks", [
+            ("Order Book / Backlog",
+             "Total value of confirmed future work not yet executed.",
+             "Company investor presentations, quarterly results PDF, BSE/NSE filings",
+             "A backlog worth 2–3× annual revenue = strong multi-year visibility."),
+            ("Book-to-Bill Ratio",
+             "New orders received ÷ revenue billed in the period.",
+             "Computed from order inflow and revenue (investor presentations)",
+             "Above 1.0 means the pipeline is growing faster than execution."),
+            ("New Contract Wins",
+             "Fresh large orders announced recently.",
+             "BSE/NSE announcements, company news, Google News",
+             "Large or marquee client wins, especially repeat orders."),
+            ("Order Growth Rate",
+             "Is the order pipeline expanding year over year?",
+             "Compare backlog across recent quarters (investor decks)",
+             "Consistent double-digit growth in order inflow."),
+        ]),
+        ("🔭 Forward Indicators", "What informed observers expect next", [
+            ("Management Guidance Revision",
+             "Has management raised or cut their own forecast?",
+             "Earnings call transcripts, results commentary (Screener docs tab)",
+             "Upward revisions to revenue/margin guidance."),
+            ("Earnings Beat Consistency",
+             "Does the company regularly beat analyst estimates?",
+             "Trendlyne, Tickertape (estimates vs actuals)",
+             "A track record of meeting or beating estimates."),
+            ("Analyst Consensus Rating",
+             "The collective buy/hold/sell view of analysts.",
+             "Tickertape, Trendlyne, MoneyControl",
+             "Majority buy ratings, improving over time."),
+            ("Analyst Price Target Upside",
+             "How far analysts think the price can rise.",
+             "Tickertape, Trendlyne",
+             "Meaningful upside to consensus target (with skepticism)."),
+            ("3-Year Revenue Forecast",
+             "Expected growth trajectory.",
+             "Analyst reports, Trendlyne forecasts",
+             "Strong, credible projected growth backed by drivers."),
+        ]),
+        ("📈 Quality Trends", "Direction, not just level", [
+            ("EBITDA Margin Expansion",
+             "Are operating margins improving over several years?",
+             "Screener P&L (OPM row across years) — also see Deep Dive trends",
+             "A steady multi-year rise in OPM."),
+            ("Net Profit Margin Trend",
+             "Is the bottom-line margin trending up?",
+             "Screener P&L — also in your Deep Dive annual trends",
+             "Improving net margin year over year."),
+        ]),
+        ("🏦 Financial Health", "Safety and resilience", [
+            ("Current Ratio",
+             "Short-term liquidity — can it pay near-term bills?",
+             "Already fetched (used in Screener filter); Screener balance sheet",
+             "Comfortably above 1.0 (sector-dependent)."),
+            ("Cash & Equivalents",
+             "The cushion to weather shocks or self-fund growth.",
+             "Screener balance sheet",
+             "Healthy cash relative to debt and near-term needs."),
+        ]),
+        ("📣 Market Sentiment", "Positioning and flows", [
+            ("Insider / Promoter Buying vs Selling",
+             "Are insiders buying (confidence) or selling (caution)?",
+             "BSE/NSE insider trading disclosures, Trendlyne",
+             "Net insider buying; avoid sustained promoter selling."),
+            ("Index Addition",
+             "Joining Nifty 50/500 forces index funds to buy.",
+             "NSE index announcements",
+             "Recent or expected inclusion in a major index."),
+            ("Short Interest",
+             "How much the market is betting against the stock.",
+             "Limited reporting in India (NSE SLB data is partial)",
+             "Low or falling short interest (hard to gauge in India)."),
+        ]),
+        ("⚠️ Risk & Red Flags", "What could go badly wrong", [
+            ("Business Model Disruption Risk",
+             "Could technology or competition erode the business?",
+             "Industry reading, annual report 'risks' section, your judgment",
+             "Durable moat; low risk of being disrupted."),
+            ("Regulatory / Geopolitical Risk",
+             "Could a policy or political change hurt the thesis?",
+             "News, annual report, sector regulations",
+             "Stable regulatory environment; diversified exposure."),
+            ("Contingent Liabilities",
+             "Hidden obligations (lawsuits, guarantees) in the footnotes.",
+             "Annual report — 'Notes to Accounts', contingent liabilities note",
+             "Small relative to net worth; no major pending litigation."),
+        ]),
+    ]
+
+    for group_title, group_note, items in checklist:
+        st.markdown(f"### {group_title}")
+        st.caption(group_note)
+        for name, what, where, good in items:
+            with st.expander(name):
+                st.markdown(f"**What it is:** {what}")
+                st.markdown(f"**Where to find it:** {where}")
+                st.markdown(f"**What 'good' looks like:** {good}")
+
+    st.info("Tip: use this checklist on your *shortlist* (the few stocks that "
+            "pass the automated screen), not all 37 — that's where this manual "
+            "research adds the most value.")
 
 st.divider()
 st.caption("⚠️ For research and educational use only. Not financial advice. "
