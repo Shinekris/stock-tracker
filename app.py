@@ -21,6 +21,42 @@ st.set_page_config(page_title="India Stock Wealth Tracker",
                    page_icon="📈", layout="wide")
 
 
+# --------------------------------------------------------------------------- #
+# Password gate
+# --------------------------------------------------------------------------- #
+# Protects the dashboard when hosted online. The password is read from
+# Streamlit secrets (set in the Streamlit Cloud app settings, NOT in code).
+# If no password is configured (e.g. running locally), the gate is skipped.
+def _check_password():
+    expected = None
+    try:
+        expected = st.secrets.get("app_password")
+    except Exception:
+        expected = None
+
+    # No password configured -> open access (typical for local use)
+    if not expected:
+        return True
+
+    if st.session_state.get("auth_ok"):
+        return True
+
+    st.title("🔒 Stock Wealth Tracker")
+    st.write("This dashboard is password-protected.")
+    pwd = st.text_input("Enter password", type="password")
+    if pwd:
+        if pwd == expected:
+            st.session_state["auth_ok"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect password.")
+    st.stop()
+    return False
+
+
+_check_password()
+
+
 @st.cache_data(ttl=300)
 def load_data():
     con = sqlite3.connect(config.DB_PATH)
