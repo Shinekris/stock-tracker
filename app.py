@@ -18,6 +18,7 @@ import scorer
 import database
 
 APP_VERSION = "v2.0"
+APP_VERSION_DATE = "Jun 2026"   # bump both when you release a new version
 
 st.set_page_config(page_title="India Stock Wealth Tracker",
                    page_icon="📈", layout="wide")
@@ -208,15 +209,17 @@ st.caption(f"Latest data: **{latest_date}**  •  {len(df)} stocks  •  "
            f"parameters (of {len(config.PRIORITY_PARAMS)} total)")
 
 if IS_OWNER:
-    tab1, tab2, tab6, tab3, tab5, tab8, tab9, tab10 = st.tabs(
+    tab1, tab2, tab6, tab3, tab5, tab8, tab9, tab10, tab11 = st.tabs(
         ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
          "🔍 Screener", "🔬 Deep Dive",
-         "🌱 Future Investment", "⚖️ Rebalance", "📋 Research Checklist"])
+         "🌱 Future Investment", "⚖️ Rebalance", "📋 Research Checklist",
+         "📈 Snapshot History"])
 else:
     # Viewer role: analysis tabs only — holdings-based tabs are hidden.
-    tab1, tab2, tab6, tab3, tab5, tab10 = st.tabs(
+    tab1, tab2, tab6, tab3, tab5, tab10, tab11 = st.tabs(
         ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
-         "🔍 Screener", "🔬 Deep Dive", "📋 Research Checklist"])
+         "🔍 Screener", "🔬 Deep Dive", "📋 Research Checklist",
+         "📈 Snapshot History"])
     tab8 = tab9 = None   # holdings tabs not shown for viewers
 
 
@@ -1110,8 +1113,124 @@ with tab10:
                 else:
                     st.caption("—")
 
+    # ---- Reference: parameters NOT auto-traced ----
+    st.divider()
+    with st.expander("📌 Parameters NOT auto-traced (what to research manually)"):
+        st.caption("From the original wider framework, these factors are not "
+                   "captured by the automated scoring — either the data isn't "
+                   "on free sources, or they need human judgement. This is your "
+                   "reminder of what the score does NOT include. Capture the "
+                   "ones that matter via the factor entry above.")
+
+        not_traced = [
+            ("📦 Order momentum",
+             ["Order Book / Backlog", "Book-to-Bill Ratio",
+              "New Contract Wins", "Order Growth Rate"]),
+            ("🔭 Forward indicators",
+             ["Management Guidance Revision", "Earnings Beat Consistency",
+              "Analyst Consensus Rating", "Analyst Price Target Upside",
+              "3-Year Revenue Forecast"]),
+            ("📈 Quality trends",
+             ["EBITDA Margin Expansion (trend)",
+              "Net Profit Margin Trend"]),
+            ("🏦 Financial health (extra)",
+             ["Current Ratio (used in filter, not scored)",
+              "Cash & Equivalents level"]),
+            ("📣 Market sentiment",
+             ["Insider / Promoter Buying vs Selling (partly auto)",
+              "Index Addition / Deletion", "Short Interest"]),
+            ("⚠️ Risk & red flags",
+             ["Business Model Disruption Risk",
+              "Regulatory / Geopolitical / Policy Risk",
+              "Contingent Liabilities / Litigation",
+              "Corporate Governance Quality",
+              "Management Quality"]),
+        ]
+        for group, items in not_traced:
+            st.markdown(f"**{group}**")
+            st.markdown("\n".join(f"- {it}" for it in items))
+
+        st.caption("Note: the 16 automated parameters (growth, returns, "
+                   "margins, cash flow, debt) are on the Leaderboard / Compare "
+                   "tabs. The list above is everything *outside* that automated "
+                   "set.")
+
+
+
+# --------------------------------------------------------------------------- #
+# TAB 11 - Snapshot History (compare scores across weekly archived snapshots)
+# --------------------------------------------------------------------------- #
+with tab11:
+    st.subheader("Snapshot history — how scores evolved")
+    st.caption("Reads the weekly snapshots saved by snapshot.bat (in the "
+               "archive folder). Use this to check whether high-scoring stocks "
+               "held up or improved over time — the key test of whether the "
+               "framework actually works. Not financial advice.")
+
+    import glob as _glob
+    import os as _os
+
+    snap_files = sorted(_glob.glob(_os.path.join("archive", "tracker_*.db")))
+    if not snap_files:
+        st.info("No snapshots yet. Run snapshot.bat (ideally weekly) to start "
+                "building history. Each run saves a dated copy of the database "
+                "into the archive folder; come back here to see scores over "
+                "time.")
+    else:
+        # Read each snapshot's latest daily scores
+        @st.cache_data(ttl=300)
+        def _load_snapshots(files):
+            frames = []
+            for fp in files:
+                # date stamp from filename tracker_YYYY-MM-DD.db
+                stamp = _os.path.basename(fp).replace("tracker_", "").replace(
+                    ".db", "")
+                try:
+                    con = sqlite3.connect(fp)
+                    latest = pd.read_sql(
+                        "SELECT MAX(date) AS d FROM daily_scores", con)["d"][0]
+                    s = pd.read_sql(
+                        "SELECT ticker, pct FROM daily_scores WHERE date = ?",
+                        con, params=(latest,))
+                    con.close()
+                    s["snapshot"] = stamp
+                    frames.append(s)
+                except Exception:
+                    continue
+            return pd.concat(frames) if frames else pd.DataFrame()
+
+        snaps = _load_snapshots(snap_files)
+        if snaps.empty:
+            st.warning("Snapshots found but couldn't be read.")
+        else:
+            n_snaps = snaps["snapshot"].nunique()
+            st.caption(f"{n_snaps} snapshot(s) on record: "
+                       f"{', '.join(sorted(snaps['snapshot'].unique()))}")
+
+            # Pivot: rows = stock, columns = snapshot date, values = score %
+            pivot = snaps.pivot_table(index="ticker", columns="snapshot",
+                                      values="pct")
+            # Add change from first to latest snapshot
+            cols = sorted(pivot.columns)
+            if len(cols) >= 2:
+                pivot["Change"] = (pivot[cols[-1]] - pivot[cols[0]]).round(1)
+            pivot = pivot.round(1).sort_values(
+                cols[-1] if cols else "ticker", ascending=False)
+            st.markdown("**Score % by snapshot (per stock)**")
+            st.dataframe(pivot, width='stretch', height=500)
+
+            # Per-stock trend line
+            st.markdown("**Trend for one stock**")
+            pick = st.selectbox("Stock", sorted(snaps["ticker"].unique()),
+                                key="snap_stock")
+            one = snaps[snaps["ticker"] == pick].sort_values("snapshot")
+            if len(one) >= 2:
+                st.line_chart(one.set_index("snapshot")["pct"], height=250)
+            else:
+                st.caption("Need at least 2 snapshots to draw a trend.")
+
 
 st.divider()
 st.caption(f"⚠️ For research and educational use only. Not financial advice. "
            f"Always consult a SEBI-registered adviser before investing.  ·  "
-           f"Stock Wealth-Creation Tracker {APP_VERSION}")
+           f"Stock Wealth-Creation Tracker {APP_VERSION} ({APP_VERSION_DATE})")
