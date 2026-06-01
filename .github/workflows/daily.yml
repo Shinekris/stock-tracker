@@ -1,19 +1,16 @@
 name: Daily Stock Data Refresh
 
-# Give the workflow permission to write back to the repository.
 permissions:
   contents: write
 
 on:
   schedule:
-    # 13:00 UTC = 6:30 PM IST, every day.
     - cron: '0 13 * * *'
-  workflow_dispatch:        # allows manual runs from the Actions tab
+  workflow_dispatch:
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -31,10 +28,21 @@ jobs:
       - name: Run collector
         run: python collector.py
 
+      - name: Weekly snapshot (Sundays only)
+        run: |
+          if [ "$(date +%u)" = "7" ]; then
+            mkdir -p archive
+            cp data/tracker.db "archive/tracker_$(date +'%Y-%m-%d').db"
+            echo "Snapshot saved"
+          else
+            echo "Not Sunday - no snapshot today."
+          fi
+
       - name: Commit updated data
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/tracker.db
-          git diff --staged --quiet || git commit -m "Daily data refresh ($(date +'%Y-%m-%d'))"
+          git add archive/ 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Daily refresh + snapshot ($(date +'%Y-%m-%d'))"
           git push
