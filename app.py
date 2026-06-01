@@ -17,6 +17,8 @@ import config
 import scorer
 import database
 
+APP_VERSION = "v2.0"
+
 st.set_page_config(page_title="India Stock Wealth Tracker",
                    page_icon="📈", layout="wide")
 
@@ -103,6 +105,73 @@ def load_holdings():
     return holdings
 
 
+# --------------------------------------------------------------------------- #
+# Research factors (manual +/- entries per stock) — saved locally
+# --------------------------------------------------------------------------- #
+# Each stock can have unlimited factors. Each factor has a description and a
+# score from -3 to +3 (positive = favourable, negative = a concern).
+# Stored one row per factor: ticker, description, score
+RESEARCH_FILE = "research_notes.csv"
+
+
+def load_research():
+    """Load research factors as {ticker: [ {desc, score}, ... ]}."""
+    import csv as _csv
+    out = {}
+    try:
+        with open(RESEARCH_FILE, newline="", encoding="utf-8") as f:
+            for row in _csv.DictReader(f):
+                t = (row.get("ticker") or "").strip().upper()
+                desc = (row.get("description") or "").strip()
+                try:
+                    score = int(row.get("score"))
+                except (TypeError, ValueError):
+                    continue
+                if t and desc:
+                    out.setdefault(t, []).append(
+                        {"desc": desc, "score": score})
+    except FileNotFoundError:
+        pass
+    return out
+
+
+def _write_research(data):
+    """Write the whole {ticker: [factors]} structure back to the CSV."""
+    import csv as _csv
+    with open(RESEARCH_FILE, "w", newline="", encoding="utf-8") as f:
+        w = _csv.DictWriter(f, fieldnames=["ticker", "description", "score"])
+        w.writeheader()
+        for t in sorted(data):
+            for fac in data[t]:
+                w.writerow({"ticker": t, "description": fac["desc"],
+                            "score": fac["score"]})
+
+
+def add_research_factor(ticker, desc, score):
+    data = load_research()
+    data.setdefault(ticker.upper(), []).append(
+        {"desc": desc.strip(), "score": int(score)})
+    _write_research(data)
+
+
+def delete_research_factor(ticker, index):
+    data = load_research()
+    facs = data.get(ticker.upper(), [])
+    if 0 <= index < len(facs):
+        facs.pop(index)
+        data[ticker.upper()] = facs
+        _write_research(data)
+
+
+def research_totals(ticker, research_data):
+    """Return (total, count, average) for a stock's manual factors."""
+    facs = research_data.get(ticker.upper(), [])
+    if not facs:
+        return 0, 0, None
+    total = sum(f["score"] for f in facs)
+    return total, len(facs), round(total / len(facs), 2)
+
+
 @st.cache_data(ttl=300)
 def load_data():
     con = sqlite3.connect(config.DB_PATH)
@@ -126,7 +195,7 @@ def grade_dot(g):
 
 
 latest_date, df, history = load_data()
-st.title("📈 India Stock Wealth-Creation Tracker")
+st.title(f"📈 India Stock Wealth-Creation Tracker  ·  {APP_VERSION}")
 
 if df is None or df.empty:
     st.warning("No data yet. Run `python collector.py --test 5` first, "
@@ -868,115 +937,181 @@ with tab10:
     st.subheader("Research checklist — the factors the tracker can't auto-score")
     st.caption("These parameters from the wealth-creation framework need manual "
                "research (they're not reliably available from free data feeds). "
-               "Use this as a guide when you study a shortlisted stock: what to "
-               "look for, where to find it, and what 'good' looks like. "
-               "This is reference information only — nothing here is scored or "
-               "saved, and none of it is financial advice.")
+               "Below, a stock's auto-scraped values are shown where available — "
+               "many fields will be blank because the data simply isn't on the "
+               "free sources. Use the guidance to research the rest yourself. "
+               "Reference only — not financial advice.")
 
-    checklist = [
-        ("📦 Order Momentum", "Most relevant for infra, defence, capital-goods, EPC stocks", [
-            ("Order Book / Backlog",
-             "Total value of confirmed future work not yet executed.",
-             "Company investor presentations, quarterly results PDF, BSE/NSE filings",
-             "A backlog worth 2–3× annual revenue = strong multi-year visibility."),
-            ("Book-to-Bill Ratio",
-             "New orders received ÷ revenue billed in the period.",
-             "Computed from order inflow and revenue (investor presentations)",
-             "Above 1.0 means the pipeline is growing faster than execution."),
-            ("New Contract Wins",
-             "Fresh large orders announced recently.",
-             "BSE/NSE announcements, company news, Google News",
-             "Large or marquee client wins, especially repeat orders."),
-            ("Order Growth Rate",
-             "Is the order pipeline expanding year over year?",
-             "Compare backlog across recent quarters (investor decks)",
-             "Consistent double-digit growth in order inflow."),
-        ]),
-        ("🔭 Forward Indicators", "What informed observers expect next", [
-            ("Management Guidance Revision",
-             "Has management raised or cut their own forecast?",
-             "Earnings call transcripts, results commentary (Screener docs tab)",
-             "Upward revisions to revenue/margin guidance."),
-            ("Earnings Beat Consistency",
-             "Does the company regularly beat analyst estimates?",
-             "Trendlyne, Tickertape (estimates vs actuals)",
-             "A track record of meeting or beating estimates."),
-            ("Analyst Consensus Rating",
-             "The collective buy/hold/sell view of analysts.",
-             "Tickertape, Trendlyne, MoneyControl",
-             "Majority buy ratings, improving over time."),
-            ("Analyst Price Target Upside",
-             "How far analysts think the price can rise.",
-             "Tickertape, Trendlyne",
-             "Meaningful upside to consensus target (with skepticism)."),
-            ("3-Year Revenue Forecast",
-             "Expected growth trajectory.",
-             "Analyst reports, Trendlyne forecasts",
-             "Strong, credible projected growth backed by drivers."),
-        ]),
-        ("📈 Quality Trends", "Direction, not just level", [
-            ("EBITDA Margin Expansion",
-             "Are operating margins improving over several years?",
-             "Screener P&L (OPM row across years) — also see Deep Dive trends",
-             "A steady multi-year rise in OPM."),
-            ("Net Profit Margin Trend",
-             "Is the bottom-line margin trending up?",
-             "Screener P&L — also in your Deep Dive annual trends",
-             "Improving net margin year over year."),
-        ]),
-        ("🏦 Financial Health", "Safety and resilience", [
-            ("Current Ratio",
-             "Short-term liquidity — can it pay near-term bills?",
-             "Already fetched (used in Screener filter); Screener balance sheet",
-             "Comfortably above 1.0 (sector-dependent)."),
-            ("Cash & Equivalents",
-             "The cushion to weather shocks or self-fund growth.",
-             "Screener balance sheet",
-             "Healthy cash relative to debt and near-term needs."),
-        ]),
-        ("📣 Market Sentiment", "Positioning and flows", [
-            ("Insider / Promoter Buying vs Selling",
-             "Are insiders buying (confidence) or selling (caution)?",
-             "BSE/NSE insider trading disclosures, Trendlyne",
-             "Net insider buying; avoid sustained promoter selling."),
-            ("Index Addition",
-             "Joining Nifty 50/500 forces index funds to buy.",
-             "NSE index announcements",
-             "Recent or expected inclusion in a major index."),
-            ("Short Interest",
-             "How much the market is betting against the stock.",
-             "Limited reporting in India (NSE SLB data is partial)",
-             "Low or falling short interest (hard to gauge in India)."),
-        ]),
-        ("⚠️ Risk & Red Flags", "What could go badly wrong", [
-            ("Business Model Disruption Risk",
-             "Could technology or competition erode the business?",
-             "Industry reading, annual report 'risks' section, your judgment",
-             "Durable moat; low risk of being disrupted."),
-            ("Regulatory / Geopolitical Risk",
-             "Could a policy or political change hurt the thesis?",
-             "News, annual report, sector regulations",
-             "Stable regulatory environment; diversified exposure."),
-            ("Contingent Liabilities",
-             "Hidden obligations (lawsuits, guarantees) in the footnotes.",
-             "Annual report — 'Notes to Accounts', contingent liabilities note",
-             "Small relative to net worth; no major pending litigation."),
-        ]),
+    research_data = load_research()
+
+    # ----------------------------------------------------------------- #
+    # Research ranking (cumulative manual +/- factors)
+    # ----------------------------------------------------------------- #
+    st.markdown("### 🏅 Research ranking (by total points)")
+    st.caption("Each stock's score is the sum of your manual factors, each "
+               "rated −3 to +3 (positive = favourable, negative = a concern). "
+               "Ranked by total points. Count and average are shown too, so a "
+               "high total from many factors can be told apart from a high "
+               "total from just one.")
+
+    rank_rows = []
+    for t in df["ticker"].tolist():
+        total, count, avg = research_totals(t, research_data)
+        rank_rows.append({
+            "Stock": t,
+            "Total points": total,
+            "Factors": count,
+            "Avg / factor": avg if avg is not None else float("nan"),
+        })
+    rank_df = pd.DataFrame(rank_rows).sort_values(
+        ["Total points", "Factors"], ascending=[False, False])
+    # Only show stocks that have at least one factor at the top, but keep all
+    rated = rank_df[rank_df["Factors"] > 0].copy()
+    unrated_n = int((rank_df["Factors"] == 0).sum())
+    # Add an explicit Rank column (1 = highest total points)
+    if not rated.empty:
+        rated.insert(0, "Rank", range(1, len(rated) + 1))
+    st.dataframe(
+        rated if not rated.empty else rank_df,
+        width='stretch', hide_index=True, height=380,
+        column_config={
+            "Total points": st.column_config.NumberColumn(
+                "Total points", format="%d"),
+        })
+    if not rated.empty:
+        st.caption(f"Showing {len(rated)} rated stock(s). {unrated_n} stock(s) "
+                   "have no factors yet — add some below.")
+    else:
+        st.info("No research factors entered yet. Add some below and the "
+                "ranking will build up.")
+
+    # ----------------------------------------------------------------- #
+    # Manual entry — add factors (saved to research_notes.csv locally)
+    # ----------------------------------------------------------------- #
+    st.markdown("### ✍️ Add a research factor")
+    entry_stock = st.selectbox("Stock", sorted(df["ticker"].tolist()),
+                               key="re_stock")
+
+    # Show existing factors for this stock, each with a delete button
+    existing = research_data.get(entry_stock.upper(), [])
+    if existing:
+        st.markdown(f"**Current factors for {entry_stock}:**")
+        for i, fac in enumerate(existing):
+            sign = "🟢" if fac["score"] > 0 else ("🔴" if fac["score"] < 0
+                                                 else "⚪")
+            c1, c2 = st.columns([6, 1])
+            with c1:
+                st.markdown(f"{sign} **{fac['score']:+d}**  —  {fac['desc']}")
+            with c2:
+                if st.button("🗑️", key=f"del_{entry_stock}_{i}",
+                             help="Delete this factor"):
+                    delete_research_factor(entry_stock, i)
+                    st.cache_data.clear()
+                    st.rerun()
+        t_, c_, a_ = research_totals(entry_stock, research_data)
+        st.markdown(f"**Running total: {t_:+d}**  ({c_} factors, "
+                    f"avg {a_:+.2f})")
+    else:
+        st.caption(f"No factors yet for {entry_stock}.")
+
+    PRESET_FACTORS = [
+        "— Type my own —",
+        "Strong order book / backlog",
+        "Weak / shrinking order book",
+        "Major new contract win",
+        "Promoter buying",
+        "Promoter selling",
+        "Promoter pledging",
+        "Clean shareholding",
+        "Regulatory / policy risk",
+        "Litigation / legal issue",
+        "Business disruption risk",
+        "Sector headwind",
+        "High contingent liabilities",
+        "Strong management quality",
+        "Corporate governance concern",
+        "Other factor",
     ]
 
-    for group_title, group_note, items in checklist:
-        st.markdown(f"### {group_title}")
-        st.caption(group_note)
-        for name, what, where, good in items:
-            with st.expander(name):
-                st.markdown(f"**What it is:** {what}")
-                st.markdown(f"**Where to find it:** {where}")
-                st.markdown(f"**What 'good' looks like:** {good}")
+    with st.form("research_form", clear_on_submit=True):
+        preset = st.selectbox("Pick a factor (or type your own below)",
+                              PRESET_FACTORS)
+        custom = st.text_input("Custom factor description (optional)",
+                               placeholder="Used only if '— Type my own —' "
+                                           "is selected above")
+        score = st.select_slider("Score", options=[-3, -2, -1, 0, 1, 2, 3],
+                                 value=0,
+                                 help="Positive = favourable, negative = concern")
+        submitted = st.form_submit_button("➕ Add factor")
+        if submitted:
+            use_custom = preset in ("— Type my own —", "Other factor")
+            desc = custom.strip() if use_custom else preset
+            if not desc:
+                st.warning("Pick a preset factor, or choose '— Type my own —' "
+                           "/ 'Other factor' and enter a description.")
+            elif score == 0:
+                st.warning("Please pick a non-zero score (−3 to +3).")
+            else:
+                try:
+                    add_research_factor(entry_stock, desc, score)
+                    st.cache_data.clear()
+                    st.success(f"Added '{desc}' to {entry_stock}.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Couldn't save: {e}")
 
-    st.info("Tip: use this checklist on your *shortlist* (the few stocks that "
-            "pass the automated screen), not all 37 — that's where this manual "
-            "research adds the most value.")
+    st.caption("⚠️ Saving works on your local PC (writes research_notes.csv). "
+               "On the hosted version, edits won't persist across restarts — "
+               "maintain factors locally and push the file to sync online.")
+
+    st.divider()
+
+    # --- Per-stock auto-scraped data (what little we can get) ---
+    cl_stock = st.selectbox("Show scraped data for stock",
+                            sorted(df["ticker"].tolist()), key="cl_stock")
+    cl_hist = database.load_history(cl_stock)
+    cl = (cl_hist or {}).get("checklist", {}) if cl_hist else {}
+
+    st.markdown(f"#### Auto-scraped data for {cl_stock}")
+    if not cl:
+        st.caption("No scraped checklist data yet — run the collector first.")
+    else:
+        def show_val(v):
+            if v is None or v == "" or v == []:
+                return "—  *(not available)*"
+            return v
+
+        rows = [
+            ("Promoter Holding (latest %)",
+             show_val(cl.get("promoter_holding_latest"))),
+            ("Promoter Holding Change (pp)",
+             show_val(cl.get("promoter_holding_change"))),
+        ]
+        for label, val in rows:
+            st.markdown(f"- **{label}:** {val}")
+
+        # Screener's own Pros & Cons, if captured
+        pros = cl.get("pros") or []
+        cons = cl.get("cons") or []
+        if pros or cons:
+            cpa, cpb = st.columns(2)
+            with cpa:
+                st.markdown("**🟢 Screener Pros**")
+                if pros:
+                    for p in pros:
+                        st.markdown(f"- {p}")
+                else:
+                    st.caption("—")
+            with cpb:
+                st.markdown("**🔴 Screener Cons**")
+                if cons:
+                    for c in cons:
+                        st.markdown(f"- {c}")
+                else:
+                    st.caption("—")
+
 
 st.divider()
-st.caption("⚠️ For research and educational use only. Not financial advice. "
-           "Always consult a SEBI-registered adviser before investing.")
+st.caption(f"⚠️ For research and educational use only. Not financial advice. "
+           f"Always consult a SEBI-registered adviser before investing.  ·  "
+           f"Stock Wealth-Creation Tracker {APP_VERSION}")

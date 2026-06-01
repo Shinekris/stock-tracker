@@ -302,6 +302,71 @@ def _parse_annual_history(soup, n=4):
     return out
 
 
+def labels_ok(a, b):
+    """Both lists non-empty and same length (for safe element-wise math)."""
+    return bool(a) and bool(b) and len(a) == len(b)
+
+
+def _parse_checklist_data(soup):
+    """Attempt to scrape the harder 'research checklist' data points from
+    Screener. Many will be blank (the data isn't on Screener) — expected and
+    honest. Returns whatever could be found."""
+    out = {}
+    bs = _parse_section_rows(soup, "balance-sheet")
+    sh = _parse_section_rows(soup, "shareholding")
+    pl = _parse_section_rows(soup, "profit-loss")
+
+    # Cash position (financial health)
+    cash = None
+    for key in ("cash equivalents", "cash & bank", "cash and bank",
+                "cash and cash equivalents"):
+        if key in bs and bs[key]:
+            cash = bs[key][-1]
+            break
+    out["cash_equivalents"] = cash
+
+    # Promoter / insider activity
+    prom = None
+    for label, vals in sh.items():
+        if "promoter" in label and vals:
+            prom = vals
+            break
+    if prom:
+        out["promoter_holding_latest"] = prom[-1]
+        out["promoter_holding_change"] = (round(prom[-1] - prom[-2], 2)
+                                          if len(prom) >= 2 else None)
+
+    # Margin trends (direction over available years)
+    sales = pl.get("sales") or pl.get("revenue") or []
+    op = pl.get("operating profit") or []
+    net = pl.get("net profit") or []
+    if labels_ok(op, sales):
+        s = [100 * op[i] / sales[i] for i in range(len(sales)) if sales[i]]
+        if len(s) >= 2:
+            out["opm_trend"] = ("improving" if s[-1] > s[0]
+                                else "declining" if s[-1] < s[0] else "flat")
+    if labels_ok(net, sales):
+        s = [100 * net[i] / sales[i] for i in range(len(sales)) if sales[i]]
+        if len(s) >= 2:
+            out["net_margin_trend"] = ("improving" if s[-1] > s[0]
+                                       else "declining" if s[-1] < s[0] else "flat")
+
+    # Pros & Cons text (Screener sometimes flags risks)
+    pros_box = soup.select_one("div.pros")
+    cons_box = soup.select_one("div.cons")
+    out["pros"] = ([li.get_text(strip=True) for li in pros_box.select("li")]
+                   if pros_box else [])
+    out["cons"] = ([li.get_text(strip=True) for li in cons_box.select("li")]
+                   if cons_box else [])
+    blob = " ".join(out["cons"]).lower()
+    out["contingent_flag"] = next(
+        ("Flagged in Screener cons — verify in annual report"
+         for kw in ("contingent", "litigation", "dispute", "default")
+         if kw in blob), None)
+
+    return out
+
+
 def _parse_quarterly_history(soup, n=4):
     """Capture the last n quarters of P&L metrics that Screener reports
     quarterly: Sales, OPM %, Net Profit — plus computed Net Margin.
@@ -523,6 +588,7 @@ def fetch_screener(screener_symbol):
     risk = _parse_risk_metrics(soup)
     quarterly = _parse_quarterly_history(soup)
     annual = _parse_annual_history(soup)
+    checklist = _parse_checklist_data(soup)
 
     return {
         "roe":                  top.get("roe"),
@@ -547,8 +613,9 @@ def fetch_screener(screener_symbol):
         "current_ratio":        filt["current_ratio"],
         "promoter_holding":     filt["promoter_holding"],
         "promoter_pledge":      top.get("pledged percentage") or filt["promoter_pledge"],
-        # quarterly + annual history (stored separately, not scored fields)
-        "_history":             {"quarterly": quarterly, "annual": annual},
+        # quarterly + annual + checklist history (stored separately)
+        "_history":             {"quarterly": quarterly, "annual": annual,
+                                 "checklist": checklist},
     }
 
 
