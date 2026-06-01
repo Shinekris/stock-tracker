@@ -1229,6 +1229,71 @@ with tab11:
             else:
                 st.caption("Need at least 2 snapshots to draw a trend.")
 
+    # ---- Research ranking history (monthly snapshots of research_notes) ----
+    st.divider()
+    st.markdown("### 🏅 Research ranking history (monthly)")
+    st.caption("How your manual research TOTAL per stock changed across monthly "
+               "snapshots of research_notes.csv (saved automatically on the 1st "
+               "of each month). Shows how your own view of each stock evolved.")
+
+    res_files = sorted(_glob.glob(_os.path.join("archive", "research_*.csv")))
+    if not res_files:
+        st.info("No research snapshots yet. The first is saved automatically on "
+                "the 1st of the month (or add archive/research_YYYY-MM-DD.csv "
+                "manually). Come back once you have one or more.")
+    else:
+        @st.cache_data(ttl=300)
+        def _load_research_snaps(files):
+            import csv as _csv2
+            frames = []
+            for fp in files:
+                stamp = _os.path.basename(fp).replace("research_", "").replace(
+                    ".csv", "")
+                totals = {}
+                try:
+                    with open(fp, newline="", encoding="utf-8") as f:
+                        for row in _csv2.DictReader(f):
+                            t = (row.get("ticker") or "").strip().upper()
+                            try:
+                                sc = int(row.get("score"))
+                            except (TypeError, ValueError):
+                                continue
+                            if t:
+                                totals[t] = totals.get(t, 0) + sc
+                except Exception:
+                    continue
+                for t, tot in totals.items():
+                    frames.append({"ticker": t, "total": tot,
+                                   "snapshot": stamp})
+            return pd.DataFrame(frames)
+
+        rsnaps = _load_research_snaps(res_files)
+        if rsnaps.empty:
+            st.warning("Research snapshots found but couldn't be read.")
+        else:
+            nrs = rsnaps["snapshot"].nunique()
+            st.caption(f"{nrs} research snapshot(s): "
+                       f"{', '.join(sorted(rsnaps['snapshot'].unique()))}")
+            rpivot = rsnaps.pivot_table(index="ticker", columns="snapshot",
+                                        values="total")
+            rcols = sorted(rpivot.columns)
+            if len(rcols) >= 2:
+                rpivot["Change"] = (rpivot[rcols[-1]] -
+                                    rpivot[rcols[0]]).round(1)
+            rpivot = rpivot.round(1).sort_values(
+                rcols[-1] if rcols else "ticker", ascending=False)
+            st.markdown("**Research total by snapshot (per stock)**")
+            st.dataframe(rpivot, width='stretch', height=400)
+
+            st.markdown("**Research trend for one stock**")
+            rpick = st.selectbox("Stock ", sorted(rsnaps["ticker"].unique()),
+                                 key="res_snap_stock")
+            rone = rsnaps[rsnaps["ticker"] == rpick].sort_values("snapshot")
+            if len(rone) >= 2:
+                st.line_chart(rone.set_index("snapshot")["total"], height=250)
+            else:
+                st.caption("Need at least 2 research snapshots to draw a trend.")
+
 
 st.divider()
 st.caption(f"⚠️ For research and educational use only. Not financial advice. "
