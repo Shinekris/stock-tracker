@@ -195,6 +195,24 @@ def grade_dot(g):
     return {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}.get(g, "⚪")
 
 
+@st.cache_data(ttl=300)
+def load_discovery():
+    """Load the discovery snapshot CSV (exported from the discovery tool and
+    copied into this folder). Returns a scored dataframe or None."""
+    import os as _os
+    if not _os.path.exists("discovery_snapshot.csv"):
+        return None
+    try:
+        d = pd.read_csv("discovery_snapshot.csv")
+        if d.empty:
+            return None
+        if "pct" in d.columns:
+            d = d.sort_values("pct", ascending=False)
+        return d
+    except Exception:
+        return None
+
+
 latest_date, df, history = load_data()
 st.title(f"📈 India Stock Wealth-Creation Tracker  ·  {APP_VERSION}")
 
@@ -209,17 +227,21 @@ st.caption(f"Latest data: **{latest_date}**  •  {len(df)} stocks  •  "
            f"parameters (of {len(config.PRIORITY_PARAMS)} total)")
 
 if IS_OWNER:
-    tab1, tab2, tab6, tab3, tab5, tab8, tab9, tab10, tab11 = st.tabs(
+    (tab1, tab2, tab6, tab3, tab5, tab8, tab9, tab10, tab11,
+     dtab1, dtab2, dtab5) = st.tabs(
         ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
          "🔍 Screener", "🔬 Deep Dive",
          "🌱 Future Investment", "⚖️ Rebalance", "📋 Research Checklist",
-         "📈 Snapshot History"])
+         "📈 Snapshot History",
+         "🔭 Disc: Board", "🔭 Disc: Compare", "🔭 Disc: Deep Dive"])
 else:
     # Viewer role: analysis tabs only — holdings-based tabs are hidden.
-    tab1, tab2, tab6, tab3, tab5, tab10, tab11 = st.tabs(
+    (tab1, tab2, tab6, tab3, tab5, tab10, tab11,
+     dtab1, dtab2, dtab5) = st.tabs(
         ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
          "🔍 Screener", "🔬 Deep Dive", "📋 Research Checklist",
-         "📈 Snapshot History"])
+         "📈 Snapshot History",
+         "🔭 Disc: Board", "🔭 Disc: Compare", "🔭 Disc: Deep Dive"])
     tab8 = tab9 = None   # holdings tabs not shown for viewers
 
 
@@ -1033,6 +1055,7 @@ with tab10:
         "High contingent liabilities",
         "Strong management quality",
         "Corporate governance concern",
+        "Conference call available",
         "Other factor",
     ]
 
@@ -1294,6 +1317,102 @@ with tab11:
             else:
                 st.caption("Need at least 2 research snapshots to draw a trend.")
 
+
+
+# =========================================================================== #
+# DISCOVERY TABS - read from discovery_snapshot.csv (synced from discovery tool)
+# =========================================================================== #
+ddf = load_discovery()
+_live = [k for k, p in config.PRIORITY_PARAMS.items() if p.get("live")]
+_short = {
+    "revenue_growth_accel": "Rev Accel", "revenue_growth": "Rev Gr",
+    "eps_growth": "EPS Gr", "price_momentum_52w": "Mom 52w",
+    "fcf_growth": "FCF Gr", "fii_buying": "FII", "roe": "ROE",
+    "roce": "ROCE", "opm": "OPM", "dividend_payout": "Div",
+    "ocf_growth": "OCF Gr", "fcf_to_profit": "FCF/NP",
+    "cfo_to_op": "CFO/OP", "debt_to_equity_score": "D/E",
+    "interest_coverage": "Int Cov", "net_margin": "Net Mgn",
+}
+
+def _no_discovery():
+    st.info("No discovery data yet. In the discovery tool run "
+            "export_discovery.bat, then copy discovery_snapshot.csv into this "
+            "folder and refresh.")
+
+# ---- Discovery Leaderboard ----
+with dtab1:
+    st.subheader("Discovery - ranked by score")
+    st.caption("Candidate stocks from your discovery screen. Synced snapshot - "
+               "refresh by re-running the discovery export and copying the file.")
+    if ddf is None:
+        _no_discovery()
+    else:
+        b = ddf[["ticker", "pct", "grade", "total_score", "max_score"]].copy()
+        b.insert(0, "Rank", range(1, len(b) + 1))
+        b["Grade"] = b["grade"].apply(lambda g: f"{grade_dot(g)} {g}")
+        b = b.rename(columns={"ticker": "Stock", "pct": "Score %",
+                              "total_score": "Wtd Pts", "max_score": "Max"})
+        st.dataframe(
+            b[["Rank", "Stock", "Score %", "Grade", "Wtd Pts", "Max"]],
+            width="stretch", hide_index=True,
+            column_config={"Score %": st.column_config.ProgressColumn(
+                "Score %", min_value=0, max_value=100, format="%.1f%%")})
+        st.bar_chart(ddf.set_index("ticker")["pct"], height=300)
+
+# ---- Discovery Compare All ----
+with dtab2:
+    st.subheader("Discovery - all stocks vs all parameters")
+    st.caption("Score heatmap for discovery candidates (3 strong / 2 avg / 1 weak).")
+    if ddf is None:
+        _no_discovery()
+    else:
+        rows = []
+        for _, r in ddf.iterrows():
+            row = {"Stock": r["ticker"], "Score %": r["pct"],
+                   "Grade": r["grade"]}
+            for k in _live:
+                row[_short.get(k, k)] = scorer.score_value(k, r.get(k))
+            rows.append(row)
+        mat = pd.DataFrame(rows)
+        pcols = [_short.get(k, k) for k in _live]
+        def _col(v):
+            if v == 3: return "background-color:#d4f0df;color:#1a6e3c;"
+            if v == 2: return "background-color:#fff3cd;color:#7a5200;"
+            if v == 1: return "background-color:#fde8e8;color:#921f1f;"
+            return "background-color:#f0f0f0;color:#999;"
+        styled = (mat.style.map(_col, subset=pcols)
+                  .format({"Score %": "{:.1f}%"})
+                  .format({c: lambda v: "-" if pd.isna(v) else f"{int(v)}"
+                           for c in pcols}))
+        st.dataframe(styled, width="stretch", hide_index=True, height=600)
+        st.caption("🟢 3 Strong  🟡 2 Average  🔴 1 Weak  ⬜ no data")
+
+# ---- Discovery Deep Dive ----
+with dtab5:
+    st.subheader("Discovery - per-stock breakdown")
+    if ddf is None:
+        _no_discovery()
+    else:
+        stock = st.selectbox("Choose a discovery stock",
+                             sorted(ddf["ticker"].tolist()), key="disc_dd")
+        row = ddf[ddf["ticker"] == stock].iloc[0]
+        st.metric(f"{stock} score", f"{row['pct']:.1f}%  ({row['grade']})")
+        for tier in sorted({p["tier"] for p in config.PRIORITY_PARAMS.values()}):
+            recs = []
+            for k, p in config.PRIORITY_PARAMS.items():
+                if not p.get("live") or p.get("tier") != tier:
+                    continue
+                val = row.get(k)
+                s = scorer.score_value(k, val)
+                rating = ("⚪ no data" if s is None else
+                          {3: "🟢 Strong", 2: "🟡 Average", 1: "🔴 Weak"}[s])
+                recs.append({"Parameter": p["label"],
+                             "Value": "-" if val is None else str(round(val, 2)),
+                             "Rating": rating})
+            if recs:
+                st.markdown(f"**{config.TIER_NAME[tier]}**")
+                st.dataframe(pd.DataFrame(recs), width="stretch",
+                             hide_index=True)
 
 st.divider()
 st.caption(f"⚠️ For research and educational use only. Not financial advice. "
