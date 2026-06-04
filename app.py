@@ -1041,20 +1041,34 @@ with tab10:
 
     PRESET_FACTORS = [
         "— Type my own —",
-        "Strong order book / backlog",
-        "Weak / shrinking order book",
-        "Major new contract win",
-        "Promoter buying",
-        "Promoter selling",
-        "Promoter pledging",
-        "Clean shareholding",
-        "Regulatory / policy risk",
-        "Litigation / legal issue",
-        "Business disruption risk",
-        "Sector headwind",
-        "High contingent liabilities",
-        "Strong management quality",
-        "Corporate governance concern",
+        # Order momentum
+        "Order Book / Backlog",
+        "Book-to-Bill Ratio",
+        "New Contract Wins",
+        "Order Growth Rate",
+        # Forward indicators
+        "Management Guidance Revision",
+        "Earnings Beat Consistency",
+        "Analyst Consensus Rating",
+        "Analyst Price Target Upside",
+        "3-Year Revenue Forecast",
+        # Quality trends
+        "EBITDA Margin Expansion (trend)",
+        "Net Profit Margin Trend",
+        # Financial health
+        "Current Ratio",
+        "Cash & Equivalents level",
+        # Market sentiment
+        "Insider / Promoter Buying vs Selling",
+        "Index Addition / Deletion",
+        "Short Interest",
+        # Risk & red flags
+        "Business Model Disruption Risk",
+        "Regulatory / Geopolitical / Policy Risk",
+        "Contingent Liabilities / Litigation",
+        "Corporate Governance Quality",
+        "Management Quality",
+        # Other
         "Conference call available",
         "Other factor",
     ]
