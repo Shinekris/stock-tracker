@@ -1,0 +1,4 @@
+COLUMN,WHAT TO PUT,RULES
+ticker,NSE symbol in CAPITALS,Must match the app's symbols (e.g. ANNAPURNA SKYGOLD PGEL)
+description,Any text - preset OR your own custom wording,Free text. Use a preset phrase or write your own custom note. Anything is allowed.
+score,Whole number -3 to +3,Positive = favourable. Negative = concern. Zero NOT allowed.

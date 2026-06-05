@@ -33,7 +33,8 @@ jobs:
           if [ "$(date +%u)" = "7" ]; then
             mkdir -p archive
             cp data/tracker.db "archive/tracker_$(date +'%Y-%m-%d').db"
-            echo "Snapshot saved"
+            python save_combined_snapshot.py
+            echo "Score + combined snapshot saved"
           else
             echo "Not Sunday - no snapshot today."
           fi

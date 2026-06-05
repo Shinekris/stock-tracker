@@ -1333,6 +1333,69 @@ with tab11:
             else:
                 st.caption("Need at least 2 research snapshots to draw a trend.")
 
+    # ---- Combined ranking history (weekly snapshots of combined values) ----
+    st.divider()
+    st.markdown("### 🥇 Combined ranking history (weekly)")
+    st.caption("How each stock's COMBINED score (fundamental + research "
+               "adjustment) changed across weekly snapshots. Saved "
+               "automatically with the Sunday snapshot.")
+
+    comb_files = sorted(_glob.glob(_os.path.join("archive", "combined_*.csv")))
+    if not comb_files:
+        st.info("No combined snapshots yet. The first is saved automatically "
+                "with the next Sunday snapshot (file: "
+                "archive/combined_YYYY-MM-DD.csv).")
+    else:
+        @st.cache_data(ttl=300)
+        def _load_combined_snaps(files):
+            import csv as _csv3
+            frames = []
+            for fp in files:
+                stamp = _os.path.basename(fp).replace("combined_", "").replace(
+                    ".csv", "")
+                try:
+                    with open(fp, newline="", encoding="utf-8") as f:
+                        for row in _csv3.DictReader(f):
+                            t = (row.get("ticker") or "").strip().upper()
+                            try:
+                                cv = float(row.get("combined"))
+                            except (TypeError, ValueError):
+                                continue
+                            if t:
+                                frames.append({"ticker": t, "combined": cv,
+                                               "snapshot": stamp})
+                except Exception:
+                    continue
+            return pd.DataFrame(frames)
+
+        csnaps = _load_combined_snaps(comb_files)
+        if csnaps.empty:
+            st.warning("Combined snapshots found but couldn't be read.")
+        else:
+            ncs = csnaps["snapshot"].nunique()
+            st.caption(f"{ncs} combined snapshot(s): "
+                       f"{', '.join(sorted(csnaps['snapshot'].unique()))}")
+            cpivot = csnaps.pivot_table(index="ticker", columns="snapshot",
+                                        values="combined")
+            ccols = sorted(cpivot.columns)
+            if len(ccols) >= 2:
+                cpivot["Change"] = (cpivot[ccols[-1]] -
+                                    cpivot[ccols[0]]).round(1)
+            cpivot = cpivot.round(1).sort_values(
+                ccols[-1] if ccols else "ticker", ascending=False)
+            st.markdown("**Combined score by snapshot (per stock)**")
+            st.dataframe(cpivot, width="stretch", height=400)
+
+            st.markdown("**Combined trend for one stock**")
+            cpick = st.selectbox("Stock  ", sorted(csnaps["ticker"].unique()),
+                                 key="comb_snap_stock")
+            cone = csnaps[csnaps["ticker"] == cpick].sort_values("snapshot")
+            if len(cone) >= 2:
+                st.line_chart(cone.set_index("snapshot")["combined"],
+                              height=250)
+            else:
+                st.caption("Need at least 2 combined snapshots to draw a trend.")
+
 
 # =========================================================================== #
 # COMBINED RANKING - fundamental score (primary) + research adjustment
