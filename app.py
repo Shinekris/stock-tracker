@@ -234,7 +234,7 @@ if IS_OWNER:
          "🌱 Invest", "⚖️ Rebal", "📋 Research",
          "📈 History",
          "🥇 Combined",
-         "🔭 Disc: Board", "🔭 Disc: Compare", "🔭 Disc: Deep Dive"])
+         "🔭 Disc: Board", "🔭 Disc: Values", "🔭 Disc: Deep Dive"])
 else:
     # Viewer role: analysis tabs only — holdings-based tabs are hidden.
     (tab1, tab2, tab6, tab3, tab5, tab10, tab11, ctab,
@@ -243,7 +243,7 @@ else:
          "🔍 Screen", "🔬 Deep", "📋 Research",
          "📈 History",
          "🥇 Combined",
-         "🔭 Disc: Board", "🔭 Disc: Compare", "🔭 Disc: Deep Dive"])
+         "🔭 Disc: Board", "🔭 Disc: Values", "🔭 Disc: Deep Dive"])
     tab8 = tab9 = None   # holdings tabs not shown for viewers
 
 
@@ -1423,33 +1423,58 @@ with dtab1:
                 "Score %", min_value=0, max_value=100, format="%.1f%%")})
         st.bar_chart(ddf.set_index("ticker")["pct"], height=300)
 
-# ---- Discovery Compare All ----
+# ---- Discovery Compare Values (actual numbers, colored by score) ----
 with dtab2:
-    st.subheader("Discovery - all stocks vs all parameters")
-    st.caption("Score heatmap for discovery candidates (3 strong / 2 avg / 1 weak).")
+    st.subheader("Discovery - all stocks vs all parameters (actual values)")
+    st.caption("The real numbers (ROE %, growth %, ratios) for discovery "
+               "candidates, colored by quality (green strong / yellow avg / "
+               "red weak / grey no data).")
     if ddf is None:
         _no_discovery()
     else:
-        rows = []
+        val_rows, score_rows = [], []
         for _, r in ddf.iterrows():
-            row = {"Stock": r["ticker"], "Score %": r["pct"],
-                   "Grade": r["grade"]}
+            vrow = {"Stock": r["ticker"], "Score %": r["pct"],
+                    "Grade": r["grade"]}
+            srow = {}
             for k in _live:
-                row[_short.get(k, k)] = scorer.score_value(k, r.get(k))
-            rows.append(row)
-        mat = pd.DataFrame(rows)
+                label = _short.get(k, k)
+                raw = r.get(k)
+                vrow[label] = raw
+                srow[label] = scorer.score_value(k, raw)
+            val_rows.append(vrow)
+            score_rows.append(srow)
+        val_mat = pd.DataFrame(val_rows).reset_index(drop=True)
+        score_mat = pd.DataFrame(score_rows).reset_index(drop=True)
         pcols = [_short.get(k, k) for k in _live]
-        def _col(v):
-            if v == 3: return "background-color:#d4f0df;color:#1a6e3c;"
-            if v == 2: return "background-color:#fff3cd;color:#7a5200;"
-            if v == 1: return "background-color:#fde8e8;color:#921f1f;"
-            return "background-color:#f0f0f0;color:#999;"
-        styled = (mat.style.map(_col, subset=pcols)
-                  .format({"Score %": "{:.1f}%"})
-                  .format({c: lambda v: "-" if pd.isna(v) else f"{int(v)}"
-                           for c in pcols}))
-        st.dataframe(styled, width="stretch", hide_index=True, height=600)
-        st.caption("🟢 3 Strong  🟡 2 Average  🔴 1 Weak  ⬜ no data")
+
+        def _color_by_score(col):
+            styles = []
+            for i in range(len(col)):
+                s = score_mat.loc[i, col.name] if col.name in score_mat else None
+                if s == 3:
+                    styles.append("background-color:#d4f0df;color:#1a6e3c;")
+                elif s == 2:
+                    styles.append("background-color:#fff3cd;color:#7a5200;")
+                elif s == 1:
+                    styles.append("background-color:#fde8e8;color:#921f1f;")
+                else:
+                    styles.append("background-color:#f0f0f0;color:#999;")
+            return styles
+
+        def _fmt_val(v):
+            if pd.isna(v):
+                return "-"
+            return f"{v:.2f}" if isinstance(v, float) else str(v)
+
+        styled_v = (val_mat.style
+                    .apply(_color_by_score, subset=pcols)
+                    .format({"Score %": lambda v: "" if pd.isna(v)
+                             else f"{v:.1f}%"})
+                    .format({c: _fmt_val for c in pcols}))
+        st.dataframe(styled_v, width="stretch", hide_index=True, height=600)
+        st.caption("Number = actual value; color = quality "
+                   "(🟢 strong / 🟡 average / 🔴 weak / ⬜ no data).")
 
 # ---- Discovery Deep Dive ----
 with dtab5:
