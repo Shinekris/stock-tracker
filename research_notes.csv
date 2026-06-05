@@ -1,16 +1,30 @@
 ticker,description,score
-SKYGOLD,Order Book / Backlog,3
-SKYGOLD,Management Quality,2
-SKYGOLD,Conference call available,1
-ANNAPURNA,New Contract Wins,2
-ANNAPURNA,Contingent Liabilities / Litigation,-2
-ANNAPURNA,Regulatory / Geopolitical / Policy Risk,-1
-PGEL,Order Growth Rate,3
-PGEL,Corporate Governance Quality,2
-ZAGGLE,Business Model Disruption Risk,-2
-ZAGGLE,Short Interest,-1
-KALYANKJIL,Management Quality,2
-KALYANKJIL,Insider / Promoter Buying vs Selling,1
-CEINSYS,Book-to-Bill Ratio,2
-CEINSYS,Conference call available,1
-ALPEXSOLAR,Regulatory / Geopolitical / Policy Risk,-2
+GVT&D,"Order Book / Backlog – Backlog ₹214.6bn, +49% YoY, multi-year visibility",3
+GVT&D,Book-to-Bill Ratio – Order inflow significantly ahead of revenue run-rate,3
+GVT&D,"New Contract Wins – HVDC, VSC-HVDC and multiple large project wins",3
+GVT&D,Order Growth Rate – Q4 order intake +188% YoY,3
+GVT&D,3-Year Revenue Forecast – Strong visibility from backlog and HVDC pipeline,2
+GVT&D,EBITDA Margin Expansion (trend) – Record Q4 EBITDA margin of 27.2%,3
+GVT&D,Net Profit Margin Trend – PBT more than doubled YoY,3
+GVT&D,"Cash & Equivalents Level – ₹25bn cash and cash equivalents, zero debt",3
+GVT&D,Business Model Disruption Risk – Industry tailwinds outweigh disruption risks,2
+GVT&D,Regulatory / Geopolitical / Policy Risk – Some localization and import dependency risks,1
+GVT&D,Contingent Liabilities / Litigation – Wage-code provision only; no major issues highlighted,1
+GVT&D,Corporate Governance Quality – Strong disclosure standards and conservative commentary,2
+GVT&D,"Management Quality – Excellent execution, risk management and capital allocation",3
+GVT&D,Conference Call Available – Detailed and transparent management interaction,3
+GVT&D,"Other Factor: Backlog Quality – 98% backlog from private customers, PSUs and central utilities; SEB exposure <2%",3
+PREMIERENE,"Order Book / Backlog – Record order book of ₹14,010 cr, +66% YoY, with over two-thirds executable in FY27 and visibility extending into FY28",3
+PREMIERENE,"Book-to-Bill Ratio – Order book ~1.75x FY26 revenue, providing strong revenue visibility",3
+PREMIERENE,"New Contract Wins – Strong demand across modules and cells, with management expecting a post-ALMM-2 order surge",2
+PREMIERENE,"3-Year Revenue Forecast – ₹12,000 cr multi-year capex plan, capacity expansion across cells, wafers, batteries and inverters supports long-term growth visibility",2
+PREMIERENE,EBITDA Margin Expansion (trend) – Operational EBITDA margin reached 30.4% despite commodity and freight inflation; operating leverage and automation benefits evident,3
+PREMIERENE,"Net Profit Margin Trend – PAT margin reached 18.8% and PAT grew 61.1% YoY, significantly ahead of revenue growth",3
+PREMIERENE,"Business Model Disruption Risk – Technology roadmap appears robust with TOPCon upgrades, Zero Busbar products and realistic assessment of next-generation technologies",2
+PREMIERENE,"Regulatory / Geopolitical / Policy Risk – ALMM-2 implementation is a major positive, though Middle East supply-chain disruptions and policy timing remain watchpoints",2
+PREMIERENE,"Corporate Governance Quality – Transparent communication on fundraising, leverage limits, acquisition strategy and technology roadmap",2
+PREMIERENE,"Management Quality – Strong execution on capacity ramps, cost control, risk pass-through mechanisms and disciplined capital allocation",3
+PREMIERENE,"Conference Call Available – Detailed disclosures across operations, policy, technology, capex and balance-sheet strategy",3
+PREMIERENE,"Other Factor: Capacity Expansion Execution – 5.6 GW module plant commissioned, 7 GW cell expansion on track, brownfield replication could lower future capex by 30–40%",3
+PREMIERENE,Other Factor: Regulatory Tailwind (ALMM-2) – Expected shift of private solar market to domestic cells from June 1 creates a significant near-term demand catalyst,3
+PREMIERENE,"Other Factor: Diversification Strategy – Transcon acquisition, inverter plans and battery investments broaden earnings drivers beyond solar modules",2
