@@ -227,20 +227,22 @@ st.caption(f"Latest data: **{latest_date}**  •  {len(df)} stocks  •  "
            f"parameters (of {len(config.PRIORITY_PARAMS)} total)")
 
 if IS_OWNER:
-    (tab1, tab2, tab6, tab3, tab5, tab8, tab9, tab10, tab11,
+    (tab1, tab2, tab6, tab3, tab5, tab8, tab9, tab10, tab11, ctab,
      dtab1, dtab2, dtab5) = st.tabs(
-        ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
-         "🔍 Screener", "🔬 Deep Dive",
-         "🌱 Future Investment", "⚖️ Rebalance", "📋 Research Checklist",
-         "📈 Snapshot History",
+        ["🏆 Board", "📊 Compare", "🔢 Values",
+         "🔍 Screen", "🔬 Deep",
+         "🌱 Invest", "⚖️ Rebal", "📋 Research",
+         "📈 History",
+         "🥇 Combined",
          "🔭 Disc: Board", "🔭 Disc: Compare", "🔭 Disc: Deep Dive"])
 else:
     # Viewer role: analysis tabs only — holdings-based tabs are hidden.
-    (tab1, tab2, tab6, tab3, tab5, tab10, tab11,
+    (tab1, tab2, tab6, tab3, tab5, tab10, tab11, ctab,
      dtab1, dtab2, dtab5) = st.tabs(
-        ["🏆 Leaderboard", "📊 Compare All", "🔢 Compare Values",
-         "🔍 Screener", "🔬 Deep Dive", "📋 Research Checklist",
-         "📈 Snapshot History",
+        ["🏆 Board", "📊 Compare", "🔢 Values",
+         "🔍 Screen", "🔬 Deep", "📋 Research",
+         "📈 History",
+         "🥇 Combined",
          "🔭 Disc: Board", "🔭 Disc: Compare", "🔭 Disc: Deep Dive"])
     tab8 = tab9 = None   # holdings tabs not shown for viewers
 
@@ -1330,6 +1332,54 @@ with tab11:
                 st.line_chart(rone.set_index("snapshot")["total"], height=250)
             else:
                 st.caption("Need at least 2 research snapshots to draw a trend.")
+
+
+# =========================================================================== #
+# COMBINED RANKING - fundamental score (primary) + research adjustment
+# =========================================================================== #
+with ctab:
+    st.subheader("Combined ranking — fundamentals + research")
+    st.caption("Fundamental score is primary; your manual research total nudges "
+               "it up or down (1 point per research point, capped at ±10). This "
+               "blends the automated quality score with your own judgement. "
+               "Not financial advice.")
+
+    research_data_c = load_research()
+    RESEARCH_CAP = 10   # max +/- points research can move the score
+
+    crows = []
+    for _, r in df.iterrows():
+        tkr = r["ticker"]
+        fund = float(r["pct"])
+        rtotal, rcount, ravg = research_totals(tkr, research_data_c)
+        rtotal = rtotal or 0
+        adj = max(-RESEARCH_CAP, min(RESEARCH_CAP, rtotal))  # cap the nudge
+        combined = round(fund + adj, 1)
+        crows.append({
+            "Stock": tkr,
+            "Combined": combined,
+            "Fundamental %": round(fund, 1),
+            "Research pts": rtotal,
+            "Adj applied": adj,
+            "Factors": rcount,
+            "Grade": r["grade"],
+        })
+
+    cdf = pd.DataFrame(crows).sort_values("Combined", ascending=False)
+    cdf.insert(0, "Rank", range(1, len(cdf) + 1))
+
+    st.dataframe(
+        cdf, width="stretch", hide_index=True,
+        height=38 + 35 * min(len(cdf), 20),
+        column_config={
+            "Combined": st.column_config.NumberColumn("Combined", format="%.1f"),
+            "Fundamental %": st.column_config.NumberColumn(
+                "Fundamental %", format="%.1f%%"),
+        })
+    st.caption("Combined = Fundamental % + research adjustment (research total, "
+               "capped at ±10). Stocks with no research factors rank purely on "
+               "fundamentals. Rank 1 = best combined.")
+    st.bar_chart(cdf.set_index("Stock")["Combined"], height=300)
 
 
 
