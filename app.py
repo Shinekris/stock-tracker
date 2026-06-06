@@ -1402,13 +1402,12 @@ with tab11:
 # =========================================================================== #
 with ctab:
     st.subheader("Combined ranking — fundamentals + research")
-    st.caption("Fundamental score is primary; your manual research total nudges "
-               "it up or down (1 point per research point, capped at ±10). This "
-               "blends the automated quality score with your own judgement. "
-               "Not financial advice.")
+    st.caption("Fundamental score is primary; your manual research nudges it up "
+               "or down. The adjustment uses the AVERAGE factor score (−3..+3) "
+               "mapped to −10..+10 — so quality matters, not how many factors a "
+               "stock has. Not financial advice.")
 
     research_data_c = load_research()
-    RESEARCH_CAP = 10   # max +/- points research can move the score
 
     crows = []
     for _, r in df.iterrows():
@@ -1416,15 +1415,21 @@ with ctab:
         fund = float(r["pct"])
         rtotal, rcount, ravg = research_totals(tkr, research_data_c)
         rtotal = rtotal or 0
-        adj = max(-RESEARCH_CAP, min(RESEARCH_CAP, rtotal))  # cap the nudge
+        # Adjustment = average factor score (-3..+3) mapped to -10..+10.
+        # Quality-based, so the number of factors doesn't inflate it.
+        if rcount and ravg is not None:
+            adj = round(ravg * (10.0 / 3.0), 1)
+        else:
+            adj = 0.0
         combined = round(fund + adj, 1)
         crows.append({
             "Stock": tkr,
             "Combined": combined,
             "Fundamental %": round(fund, 1),
-            "Research pts": rtotal,
+            "Avg/factor": ravg if rcount else None,
             "Adj applied": adj,
             "Factors": rcount,
+            "Research pts": rtotal,
             "Grade": r["grade"],
         })
 
@@ -1439,9 +1444,9 @@ with ctab:
             "Fundamental %": st.column_config.NumberColumn(
                 "Fundamental %", format="%.1f%%"),
         })
-    st.caption("Combined = Fundamental % + research adjustment (research total, "
-               "capped at ±10). Stocks with no research factors rank purely on "
-               "fundamentals. Rank 1 = best combined.")
+    st.caption("Combined = Fundamental % + adjustment, where adjustment = "
+               "average factor score (−3..+3) × 10/3 (so −10..+10). Stocks with "
+               "no research factors rank purely on fundamentals. Rank 1 = best.")
     st.bar_chart(cdf.set_index("Stock")["Combined"], height=300)
 
 
