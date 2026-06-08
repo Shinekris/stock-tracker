@@ -1,16 +1,83 @@
 ticker,description,score
-SKYGOLD,Order Book / Backlog,3
-SKYGOLD,Management Quality,2
-SKYGOLD,Conference call available,1
-ANNAPURNA,New Contract Wins,2
-ANNAPURNA,Contingent Liabilities / Litigation,-2
-ANNAPURNA,Regulatory / Geopolitical / Policy Risk,-1
-PGEL,Order Growth Rate,3
-PGEL,Corporate Governance Quality,2
-ZAGGLE,Business Model Disruption Risk,-2
-ZAGGLE,Short Interest,-1
-KALYANKJIL,Management Quality,2
-KALYANKJIL,Insider / Promoter Buying vs Selling,1
-CEINSYS,Book-to-Bill Ratio,2
-CEINSYS,Conference call available,1
-ALPEXSOLAR,Regulatory / Geopolitical / Policy Risk,-2
+GVT&D,"Order Book / Backlog – Backlog ₹214.6bn, +49% YoY, multi-year visibility",3
+GVT&D,Book-to-Bill Ratio – Order inflow significantly ahead of revenue run-rate,3
+GVT&D,"New Contract Wins – HVDC, VSC-HVDC and multiple large project wins",3
+GVT&D,Order Growth Rate – Q4 order intake +188% YoY,3
+GVT&D,3-Year Revenue Forecast – Strong visibility from backlog and HVDC pipeline,2
+GVT&D,EBITDA Margin Expansion (trend) – Record Q4 EBITDA margin of 27.2%,3
+GVT&D,Net Profit Margin Trend – PBT more than doubled YoY,3
+GVT&D,"Cash & Equivalents Level – ₹25bn cash and cash equivalents, zero debt",3
+GVT&D,Business Model Disruption Risk – Industry tailwinds outweigh disruption risks,2
+GVT&D,Regulatory / Geopolitical / Policy Risk – Some localization and import dependency risks,1
+GVT&D,Contingent Liabilities / Litigation – Wage-code provision only; no major issues highlighted,1
+GVT&D,Corporate Governance Quality – Strong disclosure standards and conservative commentary,2
+GVT&D,"Management Quality – Excellent execution, risk management and capital allocation",3
+GVT&D,Conference Call Available – Detailed and transparent management interaction,3
+GVT&D,"Other Factor: Backlog Quality – 98% backlog from private customers, PSUs and central utilities; SEB exposure <2%",3
+PREMIERENE,"Order Book / Backlog – Record order book of ₹14,010 cr, +66% YoY, with over two-thirds executable in FY27 and visibility extending into FY28",3
+PREMIERENE,"Book-to-Bill Ratio – Order book ~1.75x FY26 revenue, providing strong revenue visibility",3
+PREMIERENE,"New Contract Wins – Strong demand across modules and cells, with management expecting a post-ALMM-2 order surge",2
+PREMIERENE,"3-Year Revenue Forecast – ₹12,000 cr multi-year capex plan, capacity expansion across cells, wafers, batteries and inverters supports long-term growth visibility",2
+PREMIERENE,EBITDA Margin Expansion (trend) – Operational EBITDA margin reached 30.4% despite commodity and freight inflation; operating leverage and automation benefits evident,3
+PREMIERENE,"Net Profit Margin Trend – PAT margin reached 18.8% and PAT grew 61.1% YoY, significantly ahead of revenue growth",3
+PREMIERENE,"Business Model Disruption Risk – Technology roadmap appears robust with TOPCon upgrades, Zero Busbar products and realistic assessment of next-generation technologies",2
+PREMIERENE,"Regulatory / Geopolitical / Policy Risk – ALMM-2 implementation is a major positive, though Middle East supply-chain disruptions and policy timing remain watchpoints",2
+PREMIERENE,"Corporate Governance Quality – Transparent communication on fundraising, leverage limits, acquisition strategy and technology roadmap",2
+PREMIERENE,"Management Quality – Strong execution on capacity ramps, cost control, risk pass-through mechanisms and disciplined capital allocation",3
+PREMIERENE,"Conference Call Available – Detailed disclosures across operations, policy, technology, capex and balance-sheet strategy",3
+PREMIERENE,"Other Factor: Capacity Expansion Execution – 5.6 GW module plant commissioned, 7 GW cell expansion on track, brownfield replication could lower future capex by 30–40%",3
+PREMIERENE,Other Factor: Regulatory Tailwind (ALMM-2) – Expected shift of private solar market to domestic cells from June 1 creates a significant near-term demand catalyst,3
+PREMIERENE,"Other Factor: Diversification Strategy – Transcon acquisition, inverter plans and battery investments broaden earnings drivers beyond solar modules",2
+ALPEXSOLAR,"Order Book / Backlog – Order book of ~₹1,900 crore despite management intentionally slowing new order intake to prioritize higher-margin cell business",2
+ALPEXSOLAR,"Book-to-Bill Ratio – Order book covers ~85% of FY26 revenue, providing reasonable near-term visibility while cell revenues are yet to commence",2
+ALPEXSOLAR,"Management Guidance Revision – FY27 revenue guided to exceed ₹3,000 crore and management expects performance to surpass even that guidance after cell commissioning",3
+ALPEXSOLAR,"3-Year Revenue Forecast – Multi-stage expansion across cells, wafer/ingot and solar glass through FY30 provides strong multi-year growth visibility",3
+ALPEXSOLAR,EBITDA Margin Expansion (trend) – EBITDA margin improved from ~6.5% to ~15% over FY23-FY26; cell business expected to materially enhance margins further,3
+ALPEXSOLAR,Net Profit Margin Trend – PAT margin improved from below 2% to above 9%; FY26 PAT grew 2.4x YoY,3
+ALPEXSOLAR,"Business Model Disruption Risk – Deep vertical integration strategy (cells, wafers, glass) reduces dependence on external suppliers and strengthens competitive positioning",3
+ALPEXSOLAR,"Regulatory / Geopolitical / Policy Risk – ALMM-II and future wafer/ingot localization rules are significant tailwinds, partially offset by raw-material and freight volatility",2
+ALPEXSOLAR,"Corporate Governance Quality – Detailed disclosures on capacity timelines, utilization plans, technology choices and main-board migration plans",2
+ALPEXSOLAR,"Management Quality – Consistent execution on capacity expansion, strong strategic clarity around integration, and willingness to sacrifice near-term orders for higher-value opportunities",3
+ALPEXSOLAR,"Conference Call Available – Detailed discussion covering operations, policy, technology, expansion plans and financial performance",3
+ALPEXSOLAR,"Other Factor: Cell Manufacturing Inflection – Entire 2.2 GW TOPCon cell capacity expected to be operational within 90 days, creating a major earnings and margin catalyst",3
+ALPEXSOLAR,"Other Factor: Revenue Growth Track Record – Revenue increased from ₹194 crore in FY23 to ₹2,223 crore in FY26 (11.4x growth in three years)",3
+ALPEXSOLAR,"Other Factor: Vertical Integration Roadmap – Clear roadmap from modules to cells, wafer/ingot and solar glass by FY30, potentially creating a fully integrated solar manufacturing platform",3
+ALPEXSOLAR,"Other Factor: Operational Scalability – SAP S/4HANA implementation, AGVs, LECO technology and automation investments support scaling without proportional cost increases",2
+AZAD,"Order Book / Backlog – Rolling order book of ₹6,500+ crore, equivalent to roughly 11–12x FY26 revenue, with visibility extending 5–6 years and some contracts not fully disclosed",3
+AZAD,"Book-to-Bill Ratio – Order book exceeds 10x annual revenue, one of the strongest backlog-to-revenue ratios among listed industrial manufacturers",3
+AZAD,New Contract Wins – Secured Mitsubishi Heavy Industries as a single-source supplier under an 8-year contract for highly engineered hot-section gas turbine components,3
+AZAD,"Management Guidance Revision – Despite strong demand and new facility ramps, management maintained a conservative 25%+ growth outlook rather than raising guidance",1
+AZAD,"3-Year Revenue Forecast – Multi-year revenue visibility supported by long-duration contracts, dedicated OEM facilities, aerospace qualification pipeline and capacity expansion",3
+AZAD,EBITDA Margin Expansion (trend) – FY26 EBITDA margin remained exceptionally high at ~37% despite underutilized new facilities and ongoing ramp-up costs,3
+AZAD,"Net Profit Margin Trend – FY26 PAT grew ~54% YoY, with PAT margin improving to ~22% in Q4 versus ~21% a year earlier",3
+AZAD,Cash & Equivalents Level – Treasury balance of ₹184 crore alongside available liquidity and partially undeployed QIP proceeds provides financial flexibility,2
+AZAD,"Business Model Disruption Risk – Deep qualification moat, decade-long approval cycles, single-source status and OEM-dedicated facilities create substantial barriers to entry",3
+AZAD,"Regulatory / Geopolitical / Policy Risk – Limited direct exposure; only notable impact is delayed Saudi expansion timeline, with no major supply-chain disruption highlighted",2
+AZAD,"Corporate Governance Quality – Transparent disclosure on order book mechanics, working-capital issues, facility ramp-up timelines and deployment of QIP proceeds",3
+AZAD,"Management Quality – Demonstrated disciplined execution, conservative guidance, systematic capacity scaling and organizational upgrades to support growth",3
+AZAD,"Conference Call Available – Detailed discussion covering contracts, qualifications, margins, capex, working capital and long-term strategy",3
+AZAD,"Other Factor: Customer Concentration Quality – Dedicated facilities for GE, Siemens, Mitsubishi and Baker Hughes strengthen customer stickiness and long-term revenue visibility",3
+AZAD,"Other Factor: Aerospace Qualification Pipeline – Rolls-Royce qualification shipments expected in H2 FY27, followed by Pratt & Whitney and Safran, creating future growth optionality",3
+AZAD,"Other Factor: Capacity Expansion Execution – Four dedicated OEM facilities commissioned since listing, with management reporting stabilization 70–80% complete and further facilities on track",3
+AZAD,"Other Factor: Order Conversion Readiness – For the first time management states customer schedules, capacity availability and qualification status are aligned simultaneously at scale",3
+AZAD,"Other Factor: Nuclear Capability – Qualified supplier to EDF/Arabelle for nuclear turbine airfoils, a niche, high-barrier segment with few qualified participants globally",3
+CUPID,"Order Book / Backlog – Management highlighted the “strongest ever order pipeline” across global institutional agencies, government procurement programs and FMCG channels, with repeat global agency orders supporting multi-year revenue visibility.",3
+CUPID,"New Contract Wins – Healthy international tender pipeline, increasing participation in regulated markets, and strengthened eligibility for government tenders and multilateral public-health programs through CE certifications support strong institutional business momentum.",2
+CUPID,"Order Growth Rate – Q4 FY26 revenue grew 94.91% YoY while FY26 revenue nearly doubled YoY, reflecting exceptional order conversion and execution momentum across exports, FMCG, and institutional business.",3
+CUPID,"Management Guidance Revision – Company surpassed FY26 guidance of ₹335 Cr revenue and ₹100 Cr net profit, and raised confidence by guiding FY27 revenue target of ₹600 Cr with net margins above 30%.",3
+CUPID,"3-Year Revenue Forecast – Explicit long-term roadmap provided with FY27 revenue target of ₹600 Cr, FY28 ₹875 Cr, and FY29 ₹1,150 Cr along with rising profitability expectations.",3
+CUPID,EBITDA Margin Expansion (trend) – EBITDA margin expanded sharply from 22.74% in FY25 to 32.63% in FY26 and from 23.73% to 31.27% in Q4 FY26 due to operating leverage and scale efficiencies.,3
+CUPID,"Net Profit Margin Trend – Net profit margin improved significantly from 22.28% to 30.26% in FY26 and from 20.38% to 30.23% in Q4 FY26, indicating strong earnings quality and profitability improvement.",3
+CUPID,Current Ratio – Current assets of ₹385.39 Cr versus current liabilities of ₹82.60 Cr imply a very strong liquidity position and healthy balance-sheet strength.,3
+CUPID,"Cash & Equivalents Level – Cash and bank balance increased substantially to ₹186.45 Cr in FY26 from ₹68.57 Cr in FY25, providing strong financial flexibility for expansion.",3
+CUPID,"Insider / Promoter Buying vs Selling – Promoter group continues to hold a significant 46.03% stake, reflecting continued alignment with the business; no adverse promoter selling commentary observed.",1
+CUPID,"Business Model Disruption Risk – Company is diversifying from export-led B2B into a balanced B2B+B2C FMCG platform while expanding diagnostics and nitrile female condom categories, reducing dependence on any single segment.",2
+CUPID,"Regulatory / Geopolitical / Policy Risk – CE EU IVDR certifications strengthened access to regulated European markets and public-health tenders, while exports across 125+ countries reduce geographic concentration risk.",2
+CUPID,"Corporate Governance Quality – Investor presentation provided detailed disclosure on strategy, financials, investments, certifications, and growth roadmap without any visible governance concerns.",1
+CUPID,"Management Quality – Management demonstrated strong execution by surpassing guidance, scaling exports/FMCG operations, improving margins, securing certifications, and presenting a detailed multi-year expansion strategy.",3
+CUPID,Conference Call Available – Detailed Q4 FY26 investor presentation with management commentary and strategic outlook was publicly released for investors.,1
+CUPID,"Other Factor – Manufacturing & Technology Edge: Company became the only Indian manufacturer with integrated dual-polymer capability for latex and nitrile condoms, targeting premium nitrile female condom segment with 25–35% higher pricing potential.",3
+CUPID,"Other Factor – Distribution Expansion: FMCG products are now available across 1.5 lakh+ retail outlets, with modern trade presence projected to exceed 4,000 stores in FY27 and Baazar Style ecosystem targeting ₹500 Cr annual business potential.",3
+CUPID,Conference call available,-3
+CUPID,Conference call available,-3
+CUPID,Conference call available,-3
