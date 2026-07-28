@@ -425,6 +425,14 @@ with tab6:
             return v
         return f"{v:g}"
 
+    # The "GOOD" target row is text while the rest are numbers, so each
+    # parameter column ends up mixing str + float. Newer pyarrow refuses to
+    # serialise such object columns, so pre-format every cell to a string
+    # (colours still come from the separate numeric score_mat). Harmless on
+    # older versions too.
+    for c in pcols:
+        val_mat[c] = val_mat[c].map(fmt_val)
+
     styled_v = (val_mat.style
                 .apply(color_by_score, subset=pcols)
                 .format({"Score %": lambda v: "" if pd.isna(v) else f"{v:.1f}%"})
